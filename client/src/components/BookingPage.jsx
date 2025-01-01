@@ -12,7 +12,7 @@ const BookingPage = ({ userName }) => {
       try {
         setIsLoading(true);
         setError('');
-        const response = await axios.get(`http://localhost:8080/api/slots?date=${new Date().toISOString().split('T')[0]}`);
+        const response = await axios.get(`https://appointmentbookingapp.onrender.com/api/slots?date=${new Date().toISOString().split('T')[0]}`);
         const data = response.data;
         if (Array.isArray(data.availableSlots)) {
           setAvailableSlots(data.availableSlots); 
@@ -37,7 +37,7 @@ const BookingPage = ({ userName }) => {
     if (selectedSlot) {
       try {
         // Send booking request
-        const response = await axios.post('http://localhost:8080/api/bookSlot', {
+        const response = await axios.post('https://appointmentbookingapp.onrender.com/api/bookSlot', {
           date: new Date().toISOString().split('T')[0],
           slot: selectedSlot,
           userId: userName,
