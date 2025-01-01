@@ -3,7 +3,8 @@ const {config} = require("dotenv");
 config();
 const cors =  require("cors");
 const connectDB = require("./src/db/config");
-const router = require("./src/routes/appointmentRoutes");
+
+const router = require('./src/routes/appointmentRoutes'); 
 const app = express();
 
 const PORT = process.env.PORT || 8090
@@ -15,7 +16,7 @@ app.get('/', (req, res) => {
 
 app.use(express.json());
 app.use(cors());
-app.use('/api', router)
+app.use('/api', router); 
 
 app.listen(PORT , async () => {
     await connectDB(MONGO_URL);

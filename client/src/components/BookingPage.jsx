@@ -1,78 +1,91 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
-import SlotCard from './SlotCard';
 
-const BookingPage = () => {
-  const { userName } = useParams();
-  const [selectedDate, setSelectedDate] = useState('');
+const BookingPage = ({ userName }) => {
   const [availableSlots, setAvailableSlots] = useState([]);
-  const [bookingStatus, setBookingStatus] = useState('');
+  const [selectedSlot, setSelectedSlot] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (selectedDate) {
-      fetchAvailableSlots();
-    }
-  }, [selectedDate]);
+    const fetchAvailableSlots = async () => {
+      try {
+        setIsLoading(true);
+        setError('');
+        const response = await axios.get(`http://localhost:8080/api/slots?date=${new Date().toISOString().split('T')[0]}`);
+        const data = response.data;
+        if (Array.isArray(data.availableSlots)) {
+          setAvailableSlots(data.availableSlots); 
+        } else {
+          setError('Unexpected data format');
+        }
+      } catch (err) {
+        setError('Failed to fetch available slots');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const fetchAvailableSlots = async () => {
-    try {
-      const response = await axios.get(`/api/slots?date=${selectedDate}`);
-      setAvailableSlots(response.data);
-    } catch (error) {
-      console.error('Error fetching slots:', error);
-      setAvailableSlots([]);
+    fetchAvailableSlots();
+  }, []);
+
+  const handleSlotSelection = (slot) => {
+    setSelectedSlot(slot);
+  };
+
+  const handleBooking = async () => {
+    if (selectedSlot) {
+      try {
+        // Send booking request
+        const response = await axios.post('http://localhost:8080/api/bookSlot', {
+          date: new Date().toISOString().split('T')[0],
+          slot: selectedSlot,
+          userId: userName,
+        });
+
+        if (response.status === 200) {
+          alert('Booking successful');
+          setAvailableSlots(prevSlots => prevSlots.filter(slot => slot !== selectedSlot));
+          setSelectedSlot('');  
+        }
+      } catch (err) {
+        alert('Booking failed');
+      }
     }
   };
 
-  const handleSlotSelection = async (slot) => {
-    try {
-      const response = await axios.post('/api/bookSlot', {
-        userId: userName,
-        name: userName,
-        email: `${userName}@example.com`,
-        appointmentDate: selectedDate,
-        slot: slot,
-      });
-      setBookingStatus('Booked successfully!');
-      fetchAvailableSlots(); 
-    } catch (error) {
-      setBookingStatus('Error booking the slot.');
-    }
-  };
+  if (isLoading) return <div>Loading...</div>;
+
+  if (error) return <div>{error}</div>;
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl mb-4">Book an Appointment</h1>
-
-      <div>
-        <label className="block text-lg">Select a Date</label>
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          className="p-2 border rounded-md"
-          min={new Date().toISOString().split("T")[0]}
-        />
+    <div className="p-4">
+      <h1 className="text-xl font-semibold">Book Your Slot</h1>
+      <div className="mt-4">
+        <div className="grid grid-cols-4 gap-4">
+          {availableSlots.length === 0 ? (
+            <div>No slots available</div>
+          ) : (
+            availableSlots.map((slot, index) => (
+              <button
+                key={index}
+                onClick={() => handleSlotSelection(slot)}
+                className={`p-2 border rounded ${selectedSlot === slot ? 'bg-blue-500 text-white' : 'bg-white'}`}
+              >
+                {slot}
+              </button>
+            ))
+          )}
+        </div>
       </div>
-
-      <div className="mt-6">
-        {availableSlots.length === 0 ? (
-          <p>No slots available.</p>
-        ) : (
-          <div className="grid grid-cols-3 gap-4">
-            {availableSlots.map((slot) => (
-              <SlotCard
-                key={slot}
-                slot={slot}
-                onBookSlot={handleSlotSelection}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {bookingStatus && <p className="mt-4 text-green-500">{bookingStatus}</p>}
+      {selectedSlot && (
+        <button
+          onClick={handleBooking}
+          className="mt-4 px-6 py-2 bg-green-500 text-white rounded"
+        >
+          Book {selectedSlot}
+        </button>
+      )}
     </div>
   );
 };
