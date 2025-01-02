@@ -1,5 +1,5 @@
-const { Availability, Appointment } = require("../modules/appointment");
-
+const {Availability, Appointment} = require("../modules/appointment")
+// Get available slots
 const getAvailableSlots = async (req, res) => {
   try {
     const { date } = req.query; 
@@ -21,31 +21,33 @@ const getAvailableSlots = async (req, res) => {
   }
 };
 
-// Controller function to book a slot
+// Book a slot
 const bookSlot = async (req, res) => {
   try {
-    const { userId, name, email, appointmentDate, slot } = req.body;
+    const { userName, appointmentDate, slot } = req.body;
 
-    // Check if the slot is available
     const availability = await Availability.findOne({ date: appointmentDate });
 
     if (!availability || !availability.availableSlots.includes(slot)) {
       return res.status(400).json({ message: 'Slot is already booked or not available' });
     }
 
+    // Check if user already exists
+    const existingAppointment = await Appointment.findOne({ userName });
+    if (existingAppointment) {
+      return res.status(400).json({ message: 'User already has a booked appointment' });
+    }
+
     // Create a new appointment
     const newAppointment = new Appointment({
-      userId,
-      name,
-      email,
+      userName,
       appointmentDate,
       slot,
     });
 
-    // Save the new appointment to the database
     await newAppointment.save();
 
-    // Remove the booked slot from availability
+    // Update availability
     availability.availableSlots = availability.availableSlots.filter((s) => s !== slot);
     await availability.save();
 

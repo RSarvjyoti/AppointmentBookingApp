@@ -2,9 +2,7 @@ const { Schema, model } = require("mongoose");
 
 // Appointment schema
 const appointmentSchema = new Schema({
-    userId: { type: Schema.Types.ObjectId, required: true },
-    name: { type: String, required: true },
-    email: { type: String, required: true },
+    userName: { type: String, required: true, unique: true }, 
     appointmentDate: { type: Date, required: true },
     slot: { type: String, required: true },
     status: { type: String, enum: ['booked', 'cancelled'], default: 'booked' },
